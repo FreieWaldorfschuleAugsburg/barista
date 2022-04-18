@@ -38,6 +38,8 @@ public final class PaymentProcessor implements AutoCloseable {
 
         final MDBProduct product = application.getMdbInterface().awaitProduct();
         if (product == null) {
+            application.getMdbInterface().stopSelection();
+
             application.getSoundPlayer().play(Sound.TIMEOUT);
             log.info("Payment for '{}' timed out!", chipId);
             return;
@@ -45,6 +47,8 @@ public final class PaymentProcessor implements AutoCloseable {
 
         final BaristaConfiguration.ProductConfiguration productConfiguration = application.getConfiguration().getProducts().get(product.productId());
         if (productConfiguration == null) {
+            application.getMdbInterface().cancelPayment();
+
             application.getSoundPlayer().play(Sound.INVALID_PRODUCT);
             log.error("Payment for invalid product id '{}' requested!", product.productId());
             return;
@@ -54,8 +58,7 @@ public final class PaymentProcessor implements AutoCloseable {
             if (application.getConfiguration().getServiceChipId().equals(chipId)) {
                 application.getSoundPlayer().play(Sound.SERVICE);
             } else {
-                application.getPivotClient().getMensaMaxApi().transaction(chipId, application.getConfiguration().getPivot().getKiosk(),
-                        productConfiguration.getBarcode(), 1, productConfiguration.isRestricted());
+                application.getPivotClient().getMensaMaxApi().transaction(chipId, application.getConfiguration().getPivot().getKiosk(), productConfiguration.getBarcode(), 1, productConfiguration.isRestricted());
             }
 
             application.getMdbInterface().confirmPayment(product);

@@ -13,6 +13,7 @@ public final class BaristaConfiguration {
     private PivotConfiguration pivot;
     private ChipReaderConfiguration chipReader;
     private MDBConfiguration mdb;
+    private SentryConfiguration sentry;
     private Map<Integer, ProductConfiguration> products;
 
     @NoArgsConstructor
@@ -34,6 +35,12 @@ public final class BaristaConfiguration {
     public static final class MDBConfiguration {
         private int startMoney;
         private long timeoutMillis;
+    }
+
+    @NoArgsConstructor
+    @Getter
+    public static final class SentryConfiguration {
+        private String dsn;
     }
 
     @NoArgsConstructor

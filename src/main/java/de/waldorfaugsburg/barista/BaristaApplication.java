@@ -8,6 +8,7 @@ import de.waldorfaugsburg.barista.payment.PaymentProcessor;
 import de.waldorfaugsburg.barista.sound.SoundPlayer;
 import de.waldorfaugsburg.pivot.client.PivotClient;
 import de.waldorfaugsburg.pivot.client.mensamax.MensaMaxChipReader;
+import io.sentry.Sentry;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 
@@ -28,6 +29,11 @@ public final class BaristaApplication {
         try (final JsonReader reader = new JsonReader(new FileReader("config.json"))) {
             configuration = new Gson().fromJson(reader, BaristaConfiguration.class);
         }
+
+        Sentry.init(options -> {
+            options.setDsn(configuration.getSentry().getDsn());
+            options.setTracesSampleRate(1.0);
+        });
 
         pivotClient = new PivotClient(configuration.getPivot().getEndpoint(), configuration.getPivot().getApiKey());
         chipReader = new MensaMaxChipReader(configuration.getChipReader().getPath());

@@ -23,12 +23,7 @@ public final class MDBInterface implements AutoCloseable {
         this.atomicProduct = new AtomicReference<>(null);
 
         final String defaultPort = SerialPort.getDefaultPort();
-        serial.open(new SerialConfig()
-                .device(defaultPort)
-                .baud(Baud._115200)
-                .dataBits(DataBits._8)
-                .parity(Parity.NONE)
-                .stopBits(StopBits._1));
+        serial.open(new SerialConfig().device(defaultPort).baud(Baud._115200).dataBits(DataBits._8).parity(Parity.NONE).stopBits(StopBits._1));
 
         log.info("Serial connection opened on port '{}'", defaultPort);
 
@@ -72,8 +67,7 @@ public final class MDBInterface implements AutoCloseable {
         watcherThread.start();
 
         while (atomicProduct.get() == null) {
-            if (waitFunction.apply(startMillis))
-                return null;
+            if (waitFunction.apply(startMillis)) return null;
 
             synchronized (atomicProduct) {
                 try {
@@ -86,6 +80,10 @@ public final class MDBInterface implements AutoCloseable {
         final MDBProduct productId = atomicProduct.get();
         atomicProduct.set(null);
         return productId;
+    }
+
+    public void stopSelection() {
+        send("C", "STOP");
     }
 
     public void confirmPayment(final MDBProduct product) {
@@ -114,8 +112,7 @@ public final class MDBInterface implements AutoCloseable {
     }
 
     private void send(final String... args) {
-        if (serial.isClosed())
-            return;
+        if (serial.isClosed()) return;
 
         try {
             serial.writeln(String.join(",", args));
