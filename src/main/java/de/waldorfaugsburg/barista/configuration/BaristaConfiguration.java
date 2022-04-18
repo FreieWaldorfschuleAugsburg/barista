@@ -14,7 +14,7 @@ public final class BaristaConfiguration {
     private ChipReaderConfiguration chipReader;
     private MDBConfiguration mdb;
     private SentryConfiguration sentry;
-    private Map<Integer, ProductConfiguration> products;
+    private Map<Integer, Long> products;
 
     @NoArgsConstructor
     @Getter
@@ -41,12 +41,5 @@ public final class BaristaConfiguration {
     @Getter
     public static final class SentryConfiguration {
         private String dsn;
-    }
-
-    @NoArgsConstructor
-    @Getter
-    public static final class ProductConfiguration {
-        private long barcode;
-        private boolean restricted;
     }
 }

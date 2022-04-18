@@ -1,7 +1,6 @@
 package de.waldorfaugsburg.barista.payment;
 
 import de.waldorfaugsburg.barista.BaristaApplication;
-import de.waldorfaugsburg.barista.configuration.BaristaConfiguration;
 import de.waldorfaugsburg.barista.mdb.MDBProduct;
 import de.waldorfaugsburg.barista.sound.Sound;
 import de.waldorfaugsburg.pivot.client.ApiException;
@@ -31,7 +30,7 @@ public final class PaymentProcessor implements AutoCloseable {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         listenerThread.interrupt();
     }
 
@@ -41,35 +40,35 @@ public final class PaymentProcessor implements AutoCloseable {
         final MDBProduct product = application.getMdbInterface().awaitProduct();
         if (product == null) {
             application.getMdbInterface().stopSelection();
-
             application.getSoundPlayer().play(Sound.TIMEOUT);
-            log.info("Payment for '{}' timed out!", chipId);
+            log.info("Payment for '{}' timed out", chipId);
             return;
         }
 
-        final BaristaConfiguration.ProductConfiguration productConfiguration = application.getConfiguration().getProducts().get(product.productId());
-        if (productConfiguration == null) {
+        // Get corresponding product barcode
+        final Long productBarcode = application.getConfiguration().getProducts().get(product.productId());
+        if (productBarcode == null) {
             application.getMdbInterface().cancelPayment();
-
             application.getSoundPlayer().play(Sound.INVALID_PRODUCT);
-            log.error("Payment for invalid product id '{}' requested!", product.productId());
+            log.error("Payment for '{}' with invalid product id '{}' requested", chipId, product.productId());
             return;
         }
 
-        try {
-            if (application.getConfiguration().getServiceChipId().equals(chipId)) {
-                application.getSoundPlayer().play(Sound.SERVICE);
-            } else {
-                application.getPivotClient().getMensaMaxApi().transaction(chipId, application.getConfiguration().getPivot().getKiosk(), productConfiguration.getBarcode(), 1, productConfiguration.isRestricted());
+        // Check if is service chip
+        if (!application.getConfiguration().getServiceChipId().equals(chipId)) {
+            try {
+                application.getPivotClient().getMensaMaxApi().transaction(chipId, application.getConfiguration().getPivot().getKiosk(), productBarcode);
+            } catch (final ApiException e) {
+                application.getMdbInterface().cancelPayment();
+                application.getSoundPlayer().play(e.getError() == null ? Sound.UNKNOWN_ERROR : Sound.findByName(e.getError().getCode()));
+                log.error("Transaction by '{}' for product '{}' ({}€) failed", chipId, product.productId(), product.money(), e);
+                return;
             }
-
-            application.getMdbInterface().confirmPayment(product);
-
-            log.info("Successful transaction by '{}' for product '{}' ({}€)", chipId, product.productId(), product.money());
-        } catch (final ApiException e) {
-            application.getMdbInterface().cancelPayment();
-            application.getSoundPlayer().play(e.getError() == null ? Sound.UNKNOWN_ERROR : Sound.findByName(e.getError().getCode()));
-            log.error("An error occurred while performing transaction by '{}' for product '{}' ({}€)", chipId, product.productId(), product.money(), e);
+        } else {
+            application.getSoundPlayer().play(Sound.SERVICE);
         }
+
+        application.getMdbInterface().confirmPayment(product);
+        log.info("Successful transaction by '{}' for product '{}' ({}€)", chipId, product.productId(), product.money());
     }
 }
