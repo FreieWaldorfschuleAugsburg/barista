@@ -17,12 +17,14 @@ public final class PaymentProcessor implements AutoCloseable {
         this.application = application;
 
         listenerThread = new Thread(() -> {
-            try {
-                final String chipId = application.getChipReader().awaitChip();
-                startPayment(chipId);
-            } catch (final InterruptedException ignored) {
-            } catch (final Exception e) {
-                log.error("An error error while reading chip", e);
+            while (!Thread.interrupted()) {
+                try {
+                    final String chipId = application.getChipReader().awaitChip();
+                    startPayment(chipId);
+                } catch (final InterruptedException ignored) {
+                } catch (final Exception e) {
+                    log.error("An error error while reading chip", e);
+                }
             }
         });
         listenerThread.start();

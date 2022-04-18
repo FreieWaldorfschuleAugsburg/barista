@@ -14,17 +14,17 @@ public final class SoundPlayer {
     public void play(final Sound sound) {
         executorService.submit(() -> {
             try {
-                final String command = "mpg123 tts/" + sound.name() + ".mp3";
+                final String command = "mpg123 -f -" + sound.getVolume() + " sound/" + sound.name() + ".mp3";
                 final String[] commandAndArgs = new String[]{"/bin/sh", "-c", command};
                 final Process process = Runtime.getRuntime().exec(commandAndArgs);
                 process.waitFor();
 
                 final int exitValue = process.exitValue();
                 if (exitValue != 0) {
-                    log.error("TTS exit value was: " + exitValue);
+                    log.error("Player exit value was: " + exitValue);
                 }
             } catch (final IOException | InterruptedException e) {
-                log.error("An error occurred while running process", e);
+                log.error("An error occurred while playing sound '{}'", sound.name(), e);
             }
         });
     }
