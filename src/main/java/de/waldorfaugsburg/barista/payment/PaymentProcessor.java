@@ -55,56 +55,30 @@ public final class PaymentProcessor implements AutoCloseable {
             return;
         }
 
-        ISpan currentSpan = Sentry.startTransaction("payment", "mapProduct");
-        currentSpan.setData("id", product.productId());
-        currentSpan.finish();
-
         // Get corresponding product barcode
         final Long productBarcode = application.getConfiguration().getProducts().get(product.productId());
         if (productBarcode == null) {
             application.getMdbInterface().cancelPayment();
             application.getSoundPlayer().play(Sound.INVALID_PRODUCT);
             log.error("Payment for '{}' with invalid product id '{}' requested", chipId, product.productId());
-
-            currentSpan.finish(SpanStatus.INVALID_ARGUMENT);
             return;
         }
 
-        currentSpan.setData("barcode", productBarcode);
-        currentSpan.finish();
-
-        currentSpan = currentSpan.startChild("checkForServiceUser");
-
         // Check if is service chip
         if (!application.getConfiguration().getServiceChipId().equals(chipId)) {
-            currentSpan.setData("serviceUser", false);
-            currentSpan.finish();
-
-            currentSpan = currentSpan.startChild("transaction");
             try {
                 application.getPivotClient().getMensaMaxApi().transaction(chipId, application.getConfiguration().getPivot().getKiosk(), productBarcode);
-
-                currentSpan.finish();
             } catch (final ApiException e) {
                 application.getMdbInterface().cancelPayment();
                 application.getSoundPlayer().play(e.getError() == null ? Sound.UNKNOWN_ERROR : Sound.findByName(e.getError().getCode()));
                 log.error("Transaction by '{}' for product '{}' ({}€) failed", chipId, product.productId(), product.money(), e);
-
-                currentSpan.finish(SpanStatus.INTERNAL_ERROR);
                 return;
             }
         } else {
-            currentSpan.setData("serviceUser", true);
-            currentSpan.finish();
-
             application.getSoundPlayer().play(Sound.SERVICE);
         }
 
-        currentSpan = currentSpan.startChild("confirmation");
-
         application.getMdbInterface().confirmPayment(product);
         log.info("Successful transaction by '{}' for product '{}' ({}€)", chipId, product.productId(), product.money());
-
-        currentSpan.finish();
     }
 }
