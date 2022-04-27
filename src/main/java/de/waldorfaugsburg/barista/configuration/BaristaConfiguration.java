@@ -1,5 +1,6 @@
 package de.waldorfaugsburg.barista.configuration;
 
+import de.waldorfaugsburg.barista.sound.Sound;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -15,6 +16,7 @@ public final class BaristaConfiguration {
     private MDBConfiguration mdb;
     private SentryConfiguration sentry;
     private Map<Integer, Long> products;
+    private Map<String, Sound> sounds;
 
     @NoArgsConstructor
     @Getter

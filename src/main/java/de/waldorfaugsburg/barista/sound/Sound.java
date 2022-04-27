@@ -9,6 +9,8 @@ public enum Sound {
     RESTRICTED(100_000),
     SERVICE(20_000),
     START(20_000),
+    LASER(20_000),
+    WHISTLE(20_000),
     TIMEOUT(20_000),
     UNKNOWN_ERROR(100_000);
 
