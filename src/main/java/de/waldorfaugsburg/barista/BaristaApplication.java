@@ -3,12 +3,12 @@ package de.waldorfaugsburg.barista;
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
 import de.waldorfaugsburg.barista.configuration.BaristaConfiguration;
+import de.waldorfaugsburg.barista.http.HTTPServer;
 import de.waldorfaugsburg.barista.mdb.MDBInterface;
+import de.waldorfaugsburg.barista.mensamax.MensaMaxClient;
 import de.waldorfaugsburg.barista.payment.PaymentProcessor;
 import de.waldorfaugsburg.barista.sound.SoundPlayer;
-import de.waldorfaugsburg.pivot.client.PivotClient;
-import de.waldorfaugsburg.pivot.client.mensamax.MensaMaxChipReader;
-import io.sentry.Sentry;
+import de.waldorfaugsburg.barista.mensamax.MensaMaxChipReader;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 
@@ -18,43 +18,37 @@ import java.io.FileReader;
 public final class BaristaApplication {
 
     private BaristaConfiguration configuration;
-    private PivotClient pivotClient;
 
     private MensaMaxChipReader chipReader;
+    private MensaMaxClient mensaMaxClient;
     private MDBInterface mdbInterface;
     private SoundPlayer soundPlayer;
     private PaymentProcessor paymentProcessor;
+    private HTTPServer httpServer;
 
     public void enable() throws Exception {
         try (final JsonReader reader = new JsonReader(new FileReader("config.json"))) {
             configuration = new Gson().fromJson(reader, BaristaConfiguration.class);
         }
 
-        Sentry.init(options -> {
-            options.setDsn(configuration.getSentry().getDsn());
-            options.setTracesSampleRate(1.0);
-        });
-
-        pivotClient = new PivotClient(configuration.getPivot().getEndpoint(), configuration.getPivot().getApiKey());
         chipReader = new MensaMaxChipReader(configuration.getChipReader().getPath());
-
+        mensaMaxClient = new MensaMaxClient();
         mdbInterface = new MDBInterface(this);
         soundPlayer = new SoundPlayer();
         paymentProcessor = new PaymentProcessor(this);
+        httpServer = new HTTPServer(configuration.getHttp().getPort());
     }
 
     public void disable() throws Exception {
         chipReader.close();
+        mensaMaxClient.close();
         mdbInterface.close();
         paymentProcessor.close();
+        httpServer.close();
     }
 
     public BaristaConfiguration getConfiguration() {
         return configuration;
-    }
-
-    public PivotClient getPivotClient() {
-        return pivotClient;
     }
 
     public MensaMaxChipReader getChipReader() {

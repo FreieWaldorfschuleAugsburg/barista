@@ -14,7 +14,7 @@ public final class BaristaConfiguration {
     private PivotConfiguration pivot;
     private ChipReaderConfiguration chipReader;
     private MDBConfiguration mdb;
-    private SentryConfiguration sentry;
+    private HTTPServerConfiguration http;
     private Map<Integer, Long> products;
     private Map<String, Sound> sounds;
 
@@ -41,7 +41,7 @@ public final class BaristaConfiguration {
 
     @NoArgsConstructor
     @Getter
-    public static final class SentryConfiguration {
-        private String dsn;
+    public static final class HTTPServerConfiguration {
+        private int port;
     }
 }
