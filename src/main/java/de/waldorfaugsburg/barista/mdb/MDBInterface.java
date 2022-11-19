@@ -48,27 +48,27 @@ public final class MDBInterface implements AutoCloseable {
         serial.close();
     }
 
-    public MDBProduct awaitProduct() throws InterruptedException {
+    public MDBProduct awaitProduct(final boolean timeout) throws InterruptedException {
         // Initiate payment
         send("C", "START", Integer.toString(application.getConfiguration().getMdb().getStartMoney()));
 
         // Start timeout watcher thread
-        final long startMillis = System.currentTimeMillis();
-        final Thread watcherThread = new Thread(() -> {
-            while (!Thread.interrupted()) {
-                if (waitFunction.apply(startMillis)) {
-                    synchronized (atomicProduct) {
-                        atomicProduct.notify();
+        if (timeout) {
+            final long startMillis = System.currentTimeMillis();
+            final Thread watcherThread = new Thread(() -> {
+                while (!Thread.interrupted()) {
+                    if (waitFunction.apply(startMillis)) {
+                        synchronized (atomicProduct) {
+                            atomicProduct.notify();
+                        }
+                        break;
                     }
-                    break;
                 }
-            }
-        });
-        watcherThread.start();
+            });
+            watcherThread.start();
+        }
 
         while (atomicProduct.get() == null) {
-            if (waitFunction.apply(startMillis)) return null;
-
             synchronized (atomicProduct) {
                 try {
                     atomicProduct.wait();
@@ -77,13 +77,18 @@ public final class MDBInterface implements AutoCloseable {
             }
         }
 
-        final MDBProduct productId = atomicProduct.get();
+        final MDBProduct product = atomicProduct.get();
         atomicProduct.set(null);
-        return productId;
+        return product;
     }
 
     public void stopSelection() {
         send("C", "STOP");
+
+        // Release potential blocking
+        synchronized (atomicProduct) {
+            atomicProduct.notify();
+        }
     }
 
     public void confirmPayment(final MDBProduct product) {

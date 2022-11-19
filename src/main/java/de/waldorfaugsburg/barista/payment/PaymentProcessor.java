@@ -10,19 +10,29 @@ import lombok.extern.slf4j.Slf4j;
 public final class PaymentProcessor implements AutoCloseable {
 
     private final BaristaApplication application;
-    private final Thread listenerThread;
+
+    private Thread listenerThread;
+    private boolean freeMode;
 
     public PaymentProcessor(final BaristaApplication application) {
         this.application = application;
 
+        startListenerThread();
+    }
+
+    private void startListenerThread() {
         listenerThread = new Thread(() -> {
             while (!Thread.interrupted()) {
                 try {
-                    final String chipId = application.getChipReader().awaitChip();
-                    startPayment(chipId);
+                    if (freeMode) {
+                        final MDBProduct product = application.getMdbInterface().awaitProduct(false);
+                        application.getMdbInterface().confirmPayment(product);
+                    } else {
+                        startPayment(application.getChipReader().awaitChip());
+                    }
                 } catch (final InterruptedException ignored) {
                 } catch (final Exception e) {
-                    log.error("An error error while reading chip", e);
+                    log.error("An error error while handling payment", e);
                 }
             }
         });
@@ -41,7 +51,7 @@ public final class PaymentProcessor implements AutoCloseable {
         }
         application.getSoundPlayer().play(sound);
 
-        final MDBProduct product = application.getMdbInterface().awaitProduct();
+        final MDBProduct product = application.getMdbInterface().awaitProduct(true);
         if (product == null) {
             application.getMdbInterface().stopSelection();
             application.getSoundPlayer().play(Sound.TIMEOUT);
@@ -74,5 +84,22 @@ public final class PaymentProcessor implements AutoCloseable {
 
         application.getMdbInterface().confirmPayment(product);
         log.info("Successful transaction by '{}' for product '{}' ({}€)", chipId, product.productId(), product.money());
+    }
+
+    public boolean isFreeMode() {
+        return freeMode;
+    }
+
+    public void setFreeMode(final boolean freeMode) {
+        final boolean previouslyEnabled = this.freeMode;
+        this.freeMode = freeMode;
+
+        if (previouslyEnabled != freeMode) {
+            application.getMdbInterface().stopSelection();
+            startListenerThread();
+
+            log.info(freeMode ? "Free-mode enabled" : "Free-mode disabled");
+            application.getSoundPlayer().play(Sound.SERVICE);
+        }
     }
 }

@@ -1,14 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Configuration status="WARN" packages="org.apache.logging.log4j.core,io.sentry.log4j2">
+<Configuration status="WARN" packages="org.apache.logging.log4j.core">
     <Appenders>
         <Console name="SysOut" target="SYSTEM_OUT">
             <PatternLayout pattern="[%d{HH:mm:ss}] [%level]: %msg%n"/>
         </Console>
-        <Sentry name="Sentry"/>
     </Appenders>
     <Loggers>
         <Root level="info">
-            <AppenderRef ref="Sentry"/>
             <AppenderRef ref="SysOut" level="info"/>
         </Root>
     </Loggers>
