@@ -11,7 +11,7 @@ import java.util.Map;
 public final class BaristaConfiguration {
 
     private String serviceChipId;
-    private PivotConfiguration pivot;
+    private MensaMaxConfiguration mensaMax;
     private ChipReaderConfiguration chipReader;
     private MDBConfiguration mdb;
     private HTTPServerConfiguration http;
@@ -20,7 +20,7 @@ public final class BaristaConfiguration {
 
     @NoArgsConstructor
     @Getter
-    public static final class PivotConfiguration {
+    public static final class MensaMaxConfiguration {
         private String endpoint;
         private String apiKey;
         private String kiosk;
