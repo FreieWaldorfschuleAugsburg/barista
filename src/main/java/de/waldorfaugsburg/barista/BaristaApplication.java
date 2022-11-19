@@ -6,9 +6,8 @@ import de.waldorfaugsburg.barista.configuration.BaristaConfiguration;
 import de.waldorfaugsburg.barista.mdb.MDBInterface;
 import de.waldorfaugsburg.barista.payment.PaymentProcessor;
 import de.waldorfaugsburg.barista.sound.SoundPlayer;
-import de.waldorfaugsburg.pivot.client.PivotClient;
-import de.waldorfaugsburg.pivot.client.mensamax.MensaMaxChipReader;
-import io.sentry.Sentry;
+import de.waldorfaugsburg.mensamax.client.MensaMaxChipReader;
+import de.waldorfaugsburg.mensamax.client.MensaMaxClient;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 
@@ -18,9 +17,9 @@ import java.io.FileReader;
 public final class BaristaApplication {
 
     private BaristaConfiguration configuration;
-    private PivotClient pivotClient;
 
     private MensaMaxChipReader chipReader;
+    private MensaMaxClient mensaMaxClient;
     private MDBInterface mdbInterface;
     private SoundPlayer soundPlayer;
     private PaymentProcessor paymentProcessor;
@@ -30,14 +29,8 @@ public final class BaristaApplication {
             configuration = new Gson().fromJson(reader, BaristaConfiguration.class);
         }
 
-        Sentry.init(options -> {
-            options.setDsn(configuration.getSentry().getDsn());
-            options.setTracesSampleRate(1.0);
-        });
-
-        pivotClient = new PivotClient(configuration.getPivot().getEndpoint(), configuration.getPivot().getApiKey());
         chipReader = new MensaMaxChipReader(configuration.getChipReader().getPath());
-
+        mensaMaxClient = new MensaMaxClient(configuration.getMensaMax().getEndpoint(), configuration.getMensaMax().getApiKey());
         mdbInterface = new MDBInterface(this);
         soundPlayer = new SoundPlayer();
         paymentProcessor = new PaymentProcessor(this);
@@ -53,12 +46,12 @@ public final class BaristaApplication {
         return configuration;
     }
 
-    public PivotClient getPivotClient() {
-        return pivotClient;
-    }
-
     public MensaMaxChipReader getChipReader() {
         return chipReader;
+    }
+
+    public MensaMaxClient getMensaMaxClient() {
+        return mensaMaxClient;
     }
 
     public MDBInterface getMdbInterface() {

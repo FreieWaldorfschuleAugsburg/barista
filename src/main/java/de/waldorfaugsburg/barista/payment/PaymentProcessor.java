@@ -3,9 +3,7 @@ package de.waldorfaugsburg.barista.payment;
 import de.waldorfaugsburg.barista.BaristaApplication;
 import de.waldorfaugsburg.barista.mdb.MDBProduct;
 import de.waldorfaugsburg.barista.sound.Sound;
-import de.waldorfaugsburg.pivot.client.ApiException;
-import io.sentry.Sentry;
-import io.sentry.protocol.User;
+import de.waldorfaugsburg.mensamax.client.api.ApiException;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -37,14 +35,9 @@ public final class PaymentProcessor implements AutoCloseable {
     }
 
     private void startPayment(final String chipId) throws Exception {
-        // Create sentry user
-        final User user = new User();
-        user.setId(chipId);
-        Sentry.setUser(user);
         Sound sound = application.getConfiguration().getSounds().get(chipId);
         if (sound == null) {
             sound = Sound.START;
-
         }
         application.getSoundPlayer().play(sound);
 
@@ -68,7 +61,7 @@ public final class PaymentProcessor implements AutoCloseable {
         // Check if is service chip
         if (!application.getConfiguration().getServiceChipId().equals(chipId)) {
             try {
-                application.getPivotClient().getMensaMaxApi().transaction(chipId, application.getConfiguration().getPivot().getKiosk(), productBarcode);
+                application.getMensaMaxClient().transaction(chipId, application.getConfiguration().getMensaMax().getKiosk(), productBarcode);
             } catch (final ApiException e) {
                 application.getMdbInterface().cancelPayment();
                 application.getSoundPlayer().play(e.getError() == null ? Sound.UNKNOWN_ERROR : Sound.findByName(e.getError().getCode()));

@@ -11,16 +11,16 @@ import java.util.Map;
 public final class BaristaConfiguration {
 
     private String serviceChipId;
-    private PivotConfiguration pivot;
+    private MensaMaxConfiguration mensaMax;
     private ChipReaderConfiguration chipReader;
     private MDBConfiguration mdb;
-    private SentryConfiguration sentry;
+    private HTTPServerConfiguration http;
     private Map<Integer, Long> products;
     private Map<String, Sound> sounds;
 
     @NoArgsConstructor
     @Getter
-    public static final class PivotConfiguration {
+    public static final class MensaMaxConfiguration {
         private String endpoint;
         private String apiKey;
         private String kiosk;
@@ -41,7 +41,7 @@ public final class BaristaConfiguration {
 
     @NoArgsConstructor
     @Getter
-    public static final class SentryConfiguration {
-        private String dsn;
+    public static final class HTTPServerConfiguration {
+        private int port;
     }
 }

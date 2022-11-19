@@ -3,6 +3,7 @@ package de.waldorfaugsburg.barista.sound;
 public enum Sound {
 
     ACCOUNT_OVERDRAWN(100_000),
+    ACCOUNT_DAILY_LIMIT(100_000),
     INVALID_CHIP(100_000),
     INVALID_PRODUCT(100_000),
     NO_STOCK(100_000),
