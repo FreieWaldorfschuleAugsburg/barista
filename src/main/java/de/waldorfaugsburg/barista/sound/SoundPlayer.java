@@ -23,6 +23,8 @@ public final class SoundPlayer {
                 if (exitValue != 0) {
                     log.error("Player exit value was: " + exitValue);
                 }
+                log.info("Playing sound: " + sound.name());
+                process.destroy();
             } catch (final IOException | InterruptedException e) {
                 log.error("An error occurred while playing sound '{}'", sound.name(), e);
             }

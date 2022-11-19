@@ -3,6 +3,7 @@ package de.waldorfaugsburg.barista;
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
 import de.waldorfaugsburg.barista.configuration.BaristaConfiguration;
+import de.waldorfaugsburg.barista.http.HTTPServer;
 import de.waldorfaugsburg.barista.mdb.MDBInterface;
 import de.waldorfaugsburg.barista.payment.PaymentProcessor;
 import de.waldorfaugsburg.barista.sound.SoundPlayer;
@@ -23,6 +24,7 @@ public final class BaristaApplication {
     private MDBInterface mdbInterface;
     private SoundPlayer soundPlayer;
     private PaymentProcessor paymentProcessor;
+    private HTTPServer httpServer;
 
     public void enable() throws Exception {
         try (final JsonReader reader = new JsonReader(new FileReader("config.json"))) {
@@ -34,12 +36,14 @@ public final class BaristaApplication {
         mdbInterface = new MDBInterface(this);
         soundPlayer = new SoundPlayer();
         paymentProcessor = new PaymentProcessor(this);
+        httpServer = new HTTPServer(this, configuration.getHttp().getPort());
     }
 
     public void disable() throws Exception {
         chipReader.close();
         mdbInterface.close();
         paymentProcessor.close();
+        httpServer.close();
     }
 
     public BaristaConfiguration getConfiguration() {
