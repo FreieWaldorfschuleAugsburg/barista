@@ -72,6 +72,7 @@ public final class MDBInterface implements AutoCloseable {
             synchronized (atomicProduct) {
                 try {
                     atomicProduct.wait();
+                    break;
                 } catch (InterruptedException ignored) {
                 }
             }

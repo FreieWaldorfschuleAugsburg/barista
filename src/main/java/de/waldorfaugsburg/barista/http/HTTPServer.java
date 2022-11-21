@@ -1,15 +1,13 @@
 package de.waldorfaugsburg.barista.http;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import de.waldorfaugsburg.barista.BaristaApplication;
 import de.waldorfaugsburg.barista.sound.Sound;
 import express.Express;
+import express.http.request.Request;
+import express.http.response.Response;
 import express.utils.Status;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.InputStreamReader;
@@ -39,16 +37,14 @@ public final class HTTPServer implements AutoCloseable {
             res.send(gson.toJson(object));
         });
         server.post("/", (req, res) -> {
-            if (!req.getContentType().equals("application/json")) {
-                res.sendStatus(Status._400);
-                return;
-            }
+            if (isContentTypeInvalid(req, res)) return;
 
             final Reader reader = new InputStreamReader(req.getBody(), StandardCharsets.UTF_8);
             final JsonObject element = gson.fromJson(reader, JsonObject.class);
 
             if (!element.has("free")) {
                 res.sendStatus(Status._500);
+                log.error("Invalid http request: No free state given");
                 return;
             }
 
@@ -58,23 +54,38 @@ public final class HTTPServer implements AutoCloseable {
             res.sendStatus(Status._200);
         });
         server.post("/play", (req, res) -> {
-            if (!req.getContentType().equals("application/json")) {
-                res.sendStatus(Status._400);
-                return;
-            }
+            if (isContentTypeInvalid(req, res)) return;
 
             final Reader reader = new InputStreamReader(req.getBody(), StandardCharsets.UTF_8);
             final JsonObject element = gson.fromJson(reader, JsonObject.class);
 
             if (!element.has("sound")) {
                 res.sendStatus(Status._500);
+                log.error("Invalid http request: No sound given");
                 return;
             }
 
-            final Sound sound = Sound.findByName(element.get("sound").getAsString());
+            final String soundName = element.get("sound").getAsString();
+            final Sound sound = Sound.findByName(soundName);
+            if (sound == null) {
+                res.sendStatus(Status._500);
+                log.error("Invalid http request: Invalid sound '{}' given", soundName);
+                return;
+            }
+
+            log.info("Playing sound: {}", sound.name());
             application.getSoundPlayer().play(sound);
             res.sendStatus(Status._200);
         });
+    }
+
+    private boolean isContentTypeInvalid(Request req, Response res) {
+        if (!req.getContentType().equals("application/json")) {
+            res.sendStatus(Status._400);
+            log.error("Invalid http request: content-type mismatch");
+            return true;
+        }
+        return false;
     }
 
     @Override

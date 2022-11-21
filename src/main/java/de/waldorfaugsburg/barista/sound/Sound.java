@@ -30,6 +30,6 @@ public enum Sound {
             if (sound.name().equalsIgnoreCase(soundName))
                 return sound;
         }
-        return UNKNOWN_ERROR;
+        return null;
     }
 }

@@ -9,39 +9,59 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public final class PaymentProcessor implements AutoCloseable {
 
+    private static final int WAIT_MILLIS = 3000;
+
     private final BaristaApplication application;
 
-    private Thread listenerThread;
+    private Thread paymentThread;
     private boolean freeMode;
+    private long lastProductAwait;
 
     public PaymentProcessor(final BaristaApplication application) {
         this.application = application;
 
-        startListenerThread();
+        startPaymentThread();
     }
 
-    private void startListenerThread() {
-        listenerThread = new Thread(() -> {
+    private void startPaymentThread() {
+        if (paymentThread != null) {
+            log.info("Interrupting payment thread...");
+            paymentThread.interrupt();
+        }
+
+        paymentThread = new Thread(() -> {
             while (!Thread.interrupted()) {
                 try {
                     if (freeMode) {
-                        final MDBProduct product = application.getMdbInterface().awaitProduct(false);
-                        application.getMdbInterface().confirmPayment(product);
+                        // It's necessary to wait a few seconds before awaiting the next product
+                        if (System.currentTimeMillis() - lastProductAwait > WAIT_MILLIS) {
+                            final MDBProduct product = application.getMdbInterface().awaitProduct(false);
+                            if (product != null) {
+                                application.getMdbInterface().confirmPayment(product);
+                                log.info("Successful request for product '{}' ({}€)", product.productId(), product.money());
+                            }
+
+                            lastProductAwait = System.currentTimeMillis();
+                        }
                     } else {
-                        startPayment(application.getChipReader().awaitChip());
+                        log.info("Awaiting chip...");
+                        final String chip = application.getChipReader().awaitChip();
+                        startPayment(chip);
                     }
                 } catch (final InterruptedException ignored) {
+                    break;
                 } catch (final Exception e) {
                     log.error("An error error while handling payment", e);
                 }
             }
+            log.info("Payment thread was interrupted");
         });
-        listenerThread.start();
+        paymentThread.start();
     }
 
     @Override
     public void close() {
-        listenerThread.interrupt();
+        paymentThread.interrupt();
     }
 
     private void startPayment(final String chipId) throws Exception {
@@ -74,7 +94,12 @@ public final class PaymentProcessor implements AutoCloseable {
                 application.getMensaMaxClient().transaction(chipId, application.getConfiguration().getMensaMax().getKiosk(), productBarcode);
             } catch (final ApiException e) {
                 application.getMdbInterface().cancelPayment();
-                application.getSoundPlayer().play(e.getError() == null ? Sound.UNKNOWN_ERROR : Sound.findByName(e.getError().getCode()));
+
+                Sound errorSound;
+                if (e.getError() == null || (errorSound = Sound.findByName(e.getError().getCode())) == null) {
+                    errorSound = Sound.UNKNOWN_ERROR;
+                }
+                application.getSoundPlayer().play(errorSound);
                 log.error("Transaction by '{}' for product '{}' ({}€) failed", chipId, product.productId(), product.money(), e);
                 return;
             }
@@ -96,7 +121,7 @@ public final class PaymentProcessor implements AutoCloseable {
 
         if (previouslyEnabled != freeMode) {
             application.getMdbInterface().stopSelection();
-            startListenerThread();
+            startPaymentThread();
 
             log.info(freeMode ? "Free-mode enabled" : "Free-mode disabled");
             application.getSoundPlayer().play(Sound.SERVICE);
