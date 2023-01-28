@@ -10,6 +10,8 @@ import express.http.response.Response;
 import express.utils.Status;
 import lombok.extern.slf4j.Slf4j;
 
+import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
@@ -34,6 +36,7 @@ public final class HTTPServer implements AutoCloseable {
         server.get("/", (req, res) -> {
             final JsonObject object = new JsonObject();
             object.addProperty("free", application.getPaymentProcessor().isFreeMode());
+            object.addProperty("temperature", getProcessorTemperature());
             res.send(gson.toJson(object));
         });
         server.post("/", (req, res) -> {
@@ -77,6 +80,30 @@ public final class HTTPServer implements AutoCloseable {
             application.getSoundPlayer().play(sound);
             res.sendStatus(Status._200);
         });
+    }
+
+    private double getProcessorTemperature() {
+        try {
+            final Process process = Runtime.getRuntime().exec(new String[]{"vcgencmd", "measure_temp"});
+            process.waitFor();
+
+            final int exitValue = process.exitValue();
+            if (exitValue != 0) {
+                throw new IllegalArgumentException("process exited with status " + exitValue);
+            }
+
+            final BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (line.startsWith("temp")) {
+                    line = line.substring(5, line.length() - 2);
+                    return Double.parseDouble(line);
+                }
+            }
+        } catch (final IOException | InterruptedException e) {
+            log.error("An error occurred while reading cpu temperature", e);
+        }
+        return -1;
     }
 
     private boolean isContentTypeInvalid(Request req, Response res) {
