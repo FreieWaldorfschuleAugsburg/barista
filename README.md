@@ -2,6 +2,6 @@
 
 # Barista is a MDB coffee machine interface!
 
-In order to pleasantly quaff delicious coffee every morning, students created an MDB interface for the MensaMax kiosk.
+In order to pleasantly quaff delicious coffee every morning, students created a MDB interface for the MensaMax kiosk.
 
 #### A detailed feature description will follow soon!
