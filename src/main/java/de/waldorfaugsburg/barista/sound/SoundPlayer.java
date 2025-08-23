@@ -21,7 +21,7 @@ public final class SoundPlayer {
 
                 final int exitValue = process.exitValue();
                 if (exitValue != 0) {
-                    log.error("Player exit value was: " + exitValue);
+                    log.error("Player exit value was: {}", exitValue);
                 }
 
                 process.destroy();

@@ -113,7 +113,7 @@ public final class MDBInterface implements AutoCloseable {
                 atomicProduct.notify();
             }
         } else if (parsedData[0].equals("v")) {
-            log.info("Machine is using MDB version: " + parsedData[1]);
+            log.info("Machine is using MDB version: {}", parsedData[1]);
         }
     }
 

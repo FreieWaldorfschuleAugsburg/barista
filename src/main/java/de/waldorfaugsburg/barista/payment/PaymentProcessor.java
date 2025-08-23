@@ -4,6 +4,7 @@ import de.waldorfaugsburg.barista.BaristaApplication;
 import de.waldorfaugsburg.barista.mdb.MDBProduct;
 import de.waldorfaugsburg.barista.sound.Sound;
 import de.waldorfaugsburg.mensamax.client.api.ApiException;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -14,6 +15,7 @@ public final class PaymentProcessor implements AutoCloseable {
     private final BaristaApplication application;
 
     private Thread paymentThread;
+    @Getter
     private boolean freeMode;
     private long lastProductAwait;
 
@@ -94,12 +96,7 @@ public final class PaymentProcessor implements AutoCloseable {
                 application.getMensaMaxClient().transaction(chipId, application.getConfiguration().getMensaMax().getKiosk(), productBarcode);
             } catch (final ApiException e) {
                 application.getMdbInterface().cancelPayment();
-
-                Sound errorSound;
-                if (e.getError() == null || (errorSound = Sound.findByName(e.getError().getCode())) == null) {
-                    errorSound = Sound.UNKNOWN_ERROR;
-                }
-                application.getSoundPlayer().play(errorSound);
+                application.getSoundPlayer().play(Sound.API_ERROR);
                 log.error("Transaction by '{}' for product '{}' ({}€) failed", chipId, product.productId(), product.money(), e);
                 return;
             }
@@ -109,10 +106,6 @@ public final class PaymentProcessor implements AutoCloseable {
 
         application.getMdbInterface().confirmPayment(product);
         log.info("Successful transaction by '{}' for product '{}' ({}€)", chipId, product.productId(), product.money());
-    }
-
-    public boolean isFreeMode() {
-        return freeMode;
     }
 
     public void setFreeMode(final boolean freeMode) {

@@ -9,6 +9,7 @@ import de.waldorfaugsburg.barista.payment.PaymentProcessor;
 import de.waldorfaugsburg.barista.sound.SoundPlayer;
 import de.waldorfaugsburg.mensamax.client.MensaMaxChipReader;
 import de.waldorfaugsburg.mensamax.client.MensaMaxClient;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 
@@ -17,12 +18,18 @@ import java.io.FileReader;
 @Slf4j
 public final class BaristaApplication {
 
+    @Getter
     private BaristaConfiguration configuration;
 
+    @Getter
     private MensaMaxChipReader chipReader;
+    @Getter
     private MensaMaxClient mensaMaxClient;
+    @Getter
     private MDBInterface mdbInterface;
+    @Getter
     private SoundPlayer soundPlayer;
+    @Getter
     private PaymentProcessor paymentProcessor;
     private HTTPServer httpServer;
 
@@ -44,30 +51,6 @@ public final class BaristaApplication {
         mdbInterface.close();
         paymentProcessor.close();
         httpServer.close();
-    }
-
-    public BaristaConfiguration getConfiguration() {
-        return configuration;
-    }
-
-    public MensaMaxChipReader getChipReader() {
-        return chipReader;
-    }
-
-    public MensaMaxClient getMensaMaxClient() {
-        return mensaMaxClient;
-    }
-
-    public MDBInterface getMdbInterface() {
-        return mdbInterface;
-    }
-
-    public SoundPlayer getSoundPlayer() {
-        return soundPlayer;
-    }
-
-    public PaymentProcessor getPaymentProcessor() {
-        return paymentProcessor;
     }
 
     public static void main(final String[] args) {
