@@ -76,7 +76,7 @@ public final class PaymentProcessor implements AutoCloseable {
         final MDBProduct product = application.getMdbInterface().awaitProduct(true);
         if (product == null) {
             application.getMdbInterface().stopSelection();
-            application.getSoundPlayer().play(Sound.TIMEOUT);
+            application.getSoundPlayer().play(Sound.ERROR);
             log.info("Payment for '{}' timed out", chipId);
             return;
         }
@@ -85,7 +85,7 @@ public final class PaymentProcessor implements AutoCloseable {
         final Long productBarcode = application.getConfiguration().getProducts().get(product.productId());
         if (productBarcode == null) {
             application.getMdbInterface().cancelPayment();
-            application.getSoundPlayer().play(Sound.INVALID_PRODUCT);
+            application.getSoundPlayer().play(Sound.ERROR);
             log.error("Payment for '{}' with invalid product id '{}' requested", chipId, product.productId());
             return;
         }
@@ -96,7 +96,7 @@ public final class PaymentProcessor implements AutoCloseable {
                 application.getMensaMaxClient().transaction(chipId, application.getConfiguration().getMensaMax().getKiosk(), productBarcode);
             } catch (final ApiException e) {
                 application.getMdbInterface().cancelPayment();
-                application.getSoundPlayer().play(Sound.API_ERROR);
+                application.getSoundPlayer().play(Sound.ERROR);
                 log.error("Transaction by '{}' for product '{}' ({}€) failed", chipId, product.productId(), product.money(), e);
                 return;
             }

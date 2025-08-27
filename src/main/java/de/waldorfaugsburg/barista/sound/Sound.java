@@ -9,9 +9,7 @@ public enum Sound {
     START(20_000),
     LASER(20_000),
     WHISTLE(20_000),
-    TIMEOUT(20_000),
-    INVALID_PRODUCT(100_000),
-    API_ERROR(100_000);
+    ERROR(100_000);
 
     private final int volume;
 
