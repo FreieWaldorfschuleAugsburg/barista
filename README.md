@@ -1,3 +1,5 @@
+> Active development was moved: https://codeberg.org/WaldorfAugsburg/barista
+
 <img src="https://user-images.githubusercontent.com/38865194/203861425-6ff6c35f-cd99-437d-8168-c41ab1579e41.png" width="30%" height="30%">
 
 # Barista is a MDB coffee machine interface!
